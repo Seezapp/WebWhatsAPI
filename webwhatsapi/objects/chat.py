@@ -1,8 +1,11 @@
 from .whatsapp_object import WhatsappObjectWithId, driver_needed
 from ..helper import safe_str
+import time
+from datetime import datetime
 
 
 def factory_chat(js_obj, driver=None):
+    """Factory function for creating appropriate object given selenium JS object"""
     if js_obj["kind"] not in ["chat", "group", "broadcast"]:
         raise AssertionError("Expected chat, group or broadcast object, got {0}".format(js_obj["kind"]))
 
@@ -24,15 +27,55 @@ class Chat(WhatsappObjectWithId):
     def send_message(self, message):
         return self.driver.chat_send_message(self.id, message)
 
+    @driver_needed
+    def send_seen(self):
+        return self.driver.chat_send_seen(self.id)
+
     def get_messages(self, include_me=False, include_notifications=False):
 
         return list(self.driver.chat_get_messages(self.id, include_me, include_notifications))
+
+
+    def get_unread_messages(self,
+                            include_me=False,
+                            include_notifications=False):
+        """
+        I fetch unread messages.
+
+        :param include_me: if user's messages are to be included
+        :type  include_me: bool
+
+        :param include_notifications: if events happening on chat are to be included
+        :type  include_notifications: bool
+
+        :return: list of unread messages
+        :rtype: list
+        """
+        return list(self.driver.get_unread_messages_in_chat(
+            self.id,
+            include_me,
+            include_notifications
+        ))
+    # get_unread_messages()
+
 
     def load_earlier_messages(self):
         self.driver.chat_load_earlier_messages(self.id)
 
     def load_all_earlier_messages(self):
         self.driver.chat_load_all_earlier_messages(self.id)
+
+    def load_earlier_messages_till(self, last):
+        """
+        Triggers loading of messages till a specific point in time
+
+        :param last: Datetime object for the last message to be loaded
+        :type last: datetime
+        :return: Nothing
+        :rtype: None
+        """
+        timestamp = time.mktime(last.timetuple())
+        self.driver.wapi_functions.loadEarlierMessagesTillDate(self.id, timestamp)
 
 
 

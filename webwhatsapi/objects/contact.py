@@ -23,7 +23,6 @@ class Contact(WhatsappObjectWithId):
         if self.id:
             self.phone_number = "+" + self.id.split('@')[0]
 
-
     @driver_needed
     def get_common_groups(self):
         return list(self.driver.contact_get_common_groups(self.id))

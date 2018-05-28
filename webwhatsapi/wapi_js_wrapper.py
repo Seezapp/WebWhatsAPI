@@ -44,8 +44,11 @@ class WapiJsWrapper(object):
             script_path = os.getcwd()
         with open(os.path.join(script_path, "js", "wapi.js"), "r") as script:
             self.driver.execute_script(script.read())
-
-        return list(self.driver.execute_script("return window.WAPI").keys())
+        result = self.driver.execute_script("return window.WAPI")
+        if result:
+            return result.keys()
+        else:
+            return []
 
 
 class JsArg(object):

@@ -30,7 +30,7 @@ from .objects.contact import Contact
 from .objects.message import MessageGroup, factory_message, Message
 from .wapi_js_wrapper import WapiJsWrapper
 
-__version__ = '2.0.3c'
+__version__ = '2.0.3d'
 
 
 class WhatsAPIDriverStatus(object):
@@ -221,8 +221,19 @@ class WhatsAPIDriver(object):
         elif client == 'remote_chrome' or client == 'remote_firefox':
             if client == 'remote_firefox':
                 options = FirefoxOptions()
+                self._profile = webdriver.FirefoxProfile(self._profile_path)
             else:
                 options = ChromeOptions()
+                self._profile = webdriver.chrome.options.Options()
+                if self._profile_path is not None:
+                    self._profile.add_argument("user-data-dir=%s" % self._profile_path)
+            if headless:
+                options.set_headless()
+            options.profile = self._profile
+
+            self.driver = webdriver.Remote(options=options,
+                                           command_executor=command_executor,
+                                           **extra_params)
 
 
         elif client == 'remote':
@@ -231,19 +242,15 @@ class WhatsAPIDriver(object):
             else:
                 self._profile = webdriver.FirefoxProfile()
             capabilities = DesiredCapabilities.FIREFOX.copy()
+            options = FirefoxOptions()
+            if headless:
+                options.set_headless()
+            options.profile = self._profile
             self.driver = webdriver.Remote(
                 command_executor=command_executor,
                 desired_capabilities=capabilities,
                 **extra_params
             )
-            options = FirefoxOptions()
-            if headless:
-                options.set_headless()
-            options.profile = self._profile
-
-            self.driver = webdriver.Remote(options=options,
-                                           command_executor=command_executor,
-                                           **extra_params)
         else:
             self.logger.error("Invalid client: %s" % client)
         self.username = username
@@ -504,7 +511,7 @@ class WhatsAPIDriver(object):
                 continue
             return chat
         if createIfNotFound:
-            self.create_chat_by_number(number)
+            self.create_chat(number)
             self.wait_for_login()
             for chat in self.get_all_chats():
                 if not isinstance(chat, UserChat) or number not in chat.id:
@@ -707,10 +714,6 @@ class WhatsAPIDriver(object):
 
     def quit(self):
         self.driver.quit()
-
-    def create_chat_by_number(self, number):
-        url = self._URL + "/send?phone=" + number
-        self.driver.get(url)
 
     def create_chat(self, phone_number):
         """

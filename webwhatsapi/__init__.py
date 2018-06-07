@@ -84,7 +84,7 @@ class WhatsAPIDriver(object):
         'ReconnectLink': '.action',
         'WhatsappQrIcon': 'span.icon:nth-child(2)',
         'QRReloader': 'div > span > div[role=\"button\"]',
-        'not_whatsappable': '._3lLzD'
+        'not_whatsappable': '._3lLzD',
     }
 
     _CLASSES = {
@@ -747,3 +747,14 @@ class WhatsAPIDriver(object):
                 return True
             except WebDriverException as wd:
                 logging.warning(wd)
+
+    def phone_connected(self):
+        """Returns boolean if phone is connected"""
+        not_connected_mesages = ['Trying to reach phone', ]
+
+        popup = 'Trying to reach phone' in self.driver.page_source
+        alert_icon = 'data-icon="alert-phone"' in self.driver.page_source
+        another_computer = \
+            'WhatsApp is open on another computer or browser. Click “Use Here” to use WhatsApp in this window.'\
+            in self.driver.page_source
+        return not(popup or alert_icon or another_computer)

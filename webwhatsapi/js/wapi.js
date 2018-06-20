@@ -376,8 +376,7 @@ window.WAPI.getUnreadMessagesInChat = function (id, includeMe, includeNotificati
     let output = [];
 
     // look for unread messages, newest is at the end of array
-    for (let i = messages.length - 1; i >= 0; i--)
-    {
+    for (let i = messages.length - 1; i >= 0; i--) {
         // system message: skip it
         if (i === "remove") {
             continue;
@@ -393,8 +392,8 @@ window.WAPI.getUnreadMessagesInChat = function (id, includeMe, includeNotificati
             messageObj.__x_isNewMsg = false;
             // process it
             let message = WAPI.processMessageObj(messageObj,
-                    includeMe,
-                    includeNotifications);
+                includeMe,
+                includeNotifications);
 
             // save processed message on result list
             if (message)
@@ -554,7 +553,7 @@ window.WAPI._getGroupParticipants = async function (id) {
  */
 window.WAPI.getGroupParticipantIDs = async function (id, done) {
     const output = (await WAPI._getGroupParticipants(id))
-            .map((participant) => participant.id);
+        .map((participant) => participant.id);
 
     if (done !== undefined) {
         done(output);
@@ -564,8 +563,8 @@ window.WAPI.getGroupParticipantIDs = async function (id, done) {
 
 window.WAPI.getGroupAdmins = async function (id, done) {
     const output = (await WAPI._getGroupParticipants(id))
-            .filter((participant) => participant.isAdmin)
-            .map((admin) => admin.id);
+        .filter((participant) => participant.isAdmin)
+        .map((admin) => admin.id);
 
     if (done !== undefined) {
         done(output);
@@ -632,8 +631,8 @@ window.WAPI.getAllMessageIdsInChat = function (id, includeMe, includeNotificatio
     const messages = chat.msgs.models;
     for (const i in messages) {
         if ((i === "remove")
-                || (!includeMe && messages[i].isMe)
-                || (!includeNotifications && messages[i].isNotification)) {
+            || (!includeMe && messages[i].isMe)
+            || (!includeNotifications && messages[i].isNotification)) {
             continue;
         }
         output.push(messages[i].id._serialized);
@@ -705,6 +704,7 @@ window.WAPI.ReplyMessage = function (idMessage, message, done) {
                         }
                         sleep(500).then(check);
                     }
+
                     check();
                 });
                 return true;
@@ -780,6 +780,7 @@ window.WAPI.sendMessage = function (id, message, done) {
                         }
                         sleep(500).then(check);
                     }
+
                     check();
                 });
                 return true;
@@ -971,15 +972,15 @@ window.WAPI.getBatteryLevel = function (done) {
 };
 
 window.WAPI.getAllMessagesAfter = function (unix_timestamp, done) {
-    messageObjs = Store.Msg.models.filter((msg) => msg.__x_t > unix_timestamp);
-    output = []
+    let messageObjs = Store.Msg.models.filter((msg) => msg.__x_t > unix_timestamp);
+    var output = [];
     for (const i in messageObjs) {
         if (i === "remove") {
             continue;
         }
         const messageObj = messageObjs[i];
-        let message = WAPI.processMessageObj(messageObj, true, false)
-        if (message)output.push(message);
+        let message = WAPI.processMessageObj(messageObj, true, false);
+        if (message) output.push(message);
     }
     return output
 };

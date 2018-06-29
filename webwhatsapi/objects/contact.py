@@ -22,6 +22,14 @@ class Contact(WhatsappObjectWithId):
         self.is_me = js_obj["isMe"]
         if self.id:
             self.phone_number = "+" + self.id.split('@')[0]
+        if 'shortName' in js_obj:
+            self.short_name = js_obj["shortName"]
+        if 'pushname' in js_obj:
+            self.push_name = js_obj["pushname"]
+        if 'formattedName' in js_obj:
+            self.formatted_name = js_obj["formattedName"]
+        if 'profilePicThumbObj' in js_obj:
+            self.profile_pic = js_obj["profilePicThumbObj"].get('eurl', None)
 
     @driver_needed
     def get_common_groups(self):
@@ -39,7 +47,7 @@ class Contact(WhatsappObjectWithId):
         :rtype: String
 
         """
-        name = (self.name or self.push_name or self.formatted_name)
+        name = (self.short_name or self.push_name or self.formatted_name)
         if (isinstance(name, string_types)):
             safe_name = safe_str(name)
         else:

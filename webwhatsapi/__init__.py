@@ -12,7 +12,8 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from axolotl.kdf.hkdfv3 import HKDFv3
 from axolotl.util.byteutil import ByteUtil
-from base64 import b64decode
+from base64 import b64decode, b64encode
+import magic
 from io import BytesIO
 from json import dumps, loads
 import shutil
@@ -28,6 +29,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from .objects.chat import Chat, UserChat, factory_chat
 from .objects.contact import Contact
 from .objects.message import MessageGroup, factory_message, Message
+from .objects.message import MessageGroup, factory_message
+from .objects.message import MessageGroup, factory_message
+from .objects.number_status import NumberStatus
 from .wapi_js_wrapper import WapiJsWrapper
 
 __version__ = '2.0.3d'
@@ -254,7 +258,7 @@ class WhatsAPIDriver(object):
         else:
             self.logger.error("Invalid client: %s" % client)
         self.username = username
-        self.wapi_functions = WapiJsWrapper(self.driver)
+        self.wapi_functions = WapiJsWrapper(self.driver, self)
 
         self.driver.set_script_timeout(30)
         self.driver.implicitly_wait(10)
@@ -587,6 +591,35 @@ class WhatsAPIDriver(object):
         :type message: str
         """
         return self.wapi_functions.sendMessageToID(recipient, message)
+    
+    def convert_to_base64(self, path):
+        """
+        :param path: file path
+        :return: returns the converted string and formatted for the send media function send_media
+        """
+
+        mime = magic.Magic(mime=True)
+        content_type = mime.from_file(path)
+        archive = ''
+        with open(path, "rb") as image_file:
+            archive = b64encode(image_file.read())
+            archive = archive.decode('utf-8')
+        return 'data:' + content_type + ';base64,' + archive
+    
+    
+    def send_media(self, path, chatid, caption):
+        """
+            converts the file to base64 and sends it using the sendImage function of wapi.js
+        :param path: file path
+        :param chatid: chatId to be sent
+        :param caption:
+        :return:
+        """
+        imgBase64 = self.convert_to_base64(path)
+        filename = os.path.split(path)[-1]
+        return self.wapi_functions.sendImage(imgBase64, chatid, filename, caption)
+    
+    
 
     def chat_send_seen(self, chat_id):
         """
@@ -652,17 +685,42 @@ class WhatsAPIDriver(object):
         for admin_id in admin_ids:
             yield self.get_contact_from_id(admin_id)
 
+    def get_profile_pic_from_id(self, id):
+        """
+        Get full profile pic from an id
+
+        :param id: ID
+        :type id: str
+        """
+        return b64decode(self.wapi_functions.getProfilePicFromId(id))
+
+    def get_profile_pic_small_from_id(self, id):
+        """
+        Get small profile pic from an id
+
+        :param id: ID
+        :type id: str
+        """
+        return b64decode(self.wapi_functions.getProfilePicSmallFromId(id))
+
     def download_file(self, url):
         return b64decode(self.wapi_functions.downloadFile(url))
 
-    def download_media(self, media_msg):
-        try:
-            if media_msg.content:
-                return BytesIO(b64decode(self.content))
-        except AttributeError:
-            pass
+    def download_file_with_credentials(self, url):
+        return b64decode(self.wapi_functions.downloadFileWithCredentials(url))
+
+    def download_media(self, media_msg, force_download=False):
+        if not force_download:
+            try:
+                if media_msg.content:
+                    return BytesIO(b64decode(media_msg.content))
+            except AttributeError:
+                pass
 
         file_data = self.download_file(media_msg.client_url)
+
+        if not file_data:
+            raise Exception('Impossible to download file')
 
         media_key = b64decode(media_msg.media_key)
         derivative = HKDFv3().deriveSecrets(media_key,
@@ -711,6 +769,22 @@ class WhatsAPIDriver(object):
         :return:
         """
         return self.wapi_functions.deleteConversation(chat_id)
+
+    def check_number_status(self, number_id):
+        """
+        Check if a number is valid/registered in the whatsapp service
+
+        :param number_id: number id
+        :return:
+        """
+        number_status = self.wapi_functions.checkNumberStatus(number_id)
+        return NumberStatus(number_status, self)
+
+    def subscribe_new_messages(self, observer):
+        self.wapi_functions.new_messages_observable.subscribe(observer)
+
+    def unsubscribe_new_messages(self, observer):
+        self.wapi_functions.new_messages_observable.unsubscribe(observer)
 
     def quit(self):
         self.driver.quit()

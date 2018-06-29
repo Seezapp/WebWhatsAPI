@@ -78,7 +78,8 @@ class MediaMessage(Message):
     crypt_keys = {'document': '576861747341707020446f63756d656e74204b657973',
                   'image'   : '576861747341707020496d616765204b657973',
                   'video'   : '576861747341707020566964656f204b657973',
-                  'ptt'     : '576861747341707020417564696f204b657973'}
+                  'ptt'     : '576861747341707020417564696f204b657973',
+                  'audio'   : '576861747341707020417564696f204b657973'}
 
     def __init__(self, js_obj, driver=None):
         super(MediaMessage, self).__init__(js_obj, driver)
@@ -94,10 +95,10 @@ class MediaMessage(Message):
         extension = mimetypes.guess_extension(self.mime)
         self.filename = ''.join([str(id(self)), extension or ''])
 
-    def save_media(self, path):
+    def save_media(self, path, force_download=False):
         # gets full media
         filename = os.path.join(path, self.filename)
-        ioobj = self.driver.download_media(self)
+        ioobj = self.driver.download_media(self, force_download)
         with open(filename, "wb") as f:
             f.write(ioobj.getvalue())
         return filename

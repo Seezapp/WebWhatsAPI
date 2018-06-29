@@ -1083,8 +1083,8 @@ window.WAPI.getBatteryLevel = function (done) {
     return output;
 };
 
-window.WAPI.getAllMessagesAfter = function (unix_timestamp) {
-    let messageObjs = Store.Msg.models.filter((msg) => msg.__x_t > unix_timestamp);
+window.WAPI.getAllMessagesAfter = function (unix_timestamp, done) {
+    let messageObjs = window.Store.Msg.models.filter((msg) => msg.__x_t > unix_timestamp);
     var output = [];
     for (const i in messageObjs) {
         if (i === "remove") {
@@ -1094,6 +1094,10 @@ window.WAPI.getAllMessagesAfter = function (unix_timestamp) {
         let message = WAPI.processMessageObj(messageObj, true, false);
         if (message) output.push(message);
     }
+    if (done !== undefined) {
+        done(output);
+    }
+
     return output
 };
 window.WAPI.deleteConversation = function (chatId, done) {

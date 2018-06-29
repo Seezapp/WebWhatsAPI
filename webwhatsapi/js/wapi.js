@@ -971,7 +971,7 @@ window.WAPI.getBatteryLevel = function (done) {
     return output;
 };
 
-window.WAPI.getAllMessagesAfter = function (unix_timestamp, done) {
+window.WAPI.getAllMessagesAfter = function (unix_timestamp) {
     let messageObjs = Store.Msg.models.filter((msg) => msg.__x_t > unix_timestamp);
     var output = [];
     for (const i in messageObjs) {

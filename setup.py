@@ -103,6 +103,7 @@ setup(
         'six>=1.10.0',
         'python-axolotl',
         'cryptography'
+        'python-magic'
     ],
     extras_require={
     },

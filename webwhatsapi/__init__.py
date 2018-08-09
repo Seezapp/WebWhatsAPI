@@ -284,7 +284,7 @@ class WhatsAPIDriver(object):
         # instead we use this (temporary) solution:
         return 'class="app _3dqpi two"' in self.driver.page_source
 
-    def wait_for_login(self, timeout=90):
+    def wait_for_login(self, timeout=120):
         """Waits for the QR to go away"""
         WebDriverWait(self.driver, timeout).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, self._SELECTORS['mainPage']))
@@ -521,10 +521,8 @@ class WhatsAPIDriver(object):
         if createIfNotFound:
             self.create_chat(number)
             self.wait_for_login()
-            for chat in self.get_all_chats():
-                if not isinstance(chat, UserChat) or number not in chat.id:
-                    continue
-                return chat
+            chat = self.get_chat_from_id(number+"@c.us")
+            return chat
 
         raise ChatNotFoundError('Chat for phone {0} not found'.format(number))
 

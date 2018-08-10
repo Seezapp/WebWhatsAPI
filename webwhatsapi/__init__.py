@@ -89,7 +89,9 @@ class WhatsAPIDriver(object):
         'WhatsappQrIcon': 'span.icon:nth-child(2)',
         'QRReloader': 'div > span > div[role=\"button\"]',
         'not_whatsappable': '._3lLzD',
+        'chat_window': '._2tW_W'
     }
+
 
     _CLASSES = {
         'unreadBadge': 'icon-meta',
@@ -288,6 +290,12 @@ class WhatsAPIDriver(object):
         """Waits for the QR to go away"""
         WebDriverWait(self.driver, timeout).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, self._SELECTORS['mainPage']))
+        )
+
+    def wait_for_chat(self, timeout=60):
+        """waits for chat to appear"""
+        WebDriverWait(self.driver, timeout).until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, self._SELECTORS['chat_window']))
         )
 
     def get_qr_plain(self):
@@ -521,6 +529,7 @@ class WhatsAPIDriver(object):
         if createIfNotFound:
             self.create_chat(number)
             self.wait_for_login()
+            self.wait_for_chat()
             chat = self.get_chat_from_id(number+"@c.us")
             return chat
 

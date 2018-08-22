@@ -87,8 +87,8 @@ class WhatsAPIDriver(object):
         'UnreadChatBanner': '.message-list',
         'ReconnectLink': '.action',
         'WhatsappQrIcon': 'span.icon:nth-child(2)',
-        'QRReloader': 'div > span > div[role=\"button\"]',
         'not_whatsappable': '._3lLzD',
+        'QRReloader': '._2EZ_m > span > div'
     }
 
     _CLASSES = {
@@ -278,8 +278,9 @@ class WhatsAPIDriver(object):
     def is_logged_in(self):
         """Returns if user is logged. Can be used if non-block needed for wait_for_login"""
 
-        # self.driver.find_element_by_css_selector(self._SELECTORS['mainPage'])
-        # it becomes ridiculously slow if the element is not found.
+        # Checking in store conn if logged in
+        # Error in conn, sometimes it is not found
+        # return self.wapi_functions.isLoggedIn()
 
         # instead we use this (temporary) solution:
         return 'class="app _3dqpi two"' in self.driver.page_source
@@ -307,6 +308,13 @@ class WhatsAPIDriver(object):
         qr.screenshot(fn_png)
         os.close(fd)
         return fn_png
+
+    def get_qr_base64(self):
+        if "Click to reload QR code" in self.driver.page_source:
+            self.reload_qr()
+        qr = self.driver.find_element_by_css_selector(self._SELECTORS['qrCode'])
+
+        return qr.screenshot_as_base64
 
     def screenshot(self, filename):
         self.driver.get_screenshot_as_file(filename)
@@ -376,8 +384,8 @@ class WhatsAPIDriver(object):
         unread_messages = []
         for raw_message_group in raw_message_groups:
             chat = factory_chat(raw_message_group, self)
-            messages = [factory_message(message, self) for message in
-                        raw_message_group['messages']]
+            messages = [factory_message(message, self) for message in raw_message_group['messages']]
+            messages.sort(key=lambda message: message.cid)
             unread_messages.append(MessageGroup(chat, messages))
 
         return unread_messages
@@ -529,15 +537,7 @@ class WhatsAPIDriver(object):
         raise ChatNotFoundError('Chat for phone {0} not found'.format(number))
 
     def reload_qr(self):
-        """
-        If the reload button is there, click it to reload
-        :return: success true/false
-        """
-        elem = self.driver.find_element_by_css_selector(self._SELECTORS['qrCode']).click()
-        if elem:
-            elem.click()
-            return True
-        return False
+        self.driver.find_element_by_css_selector(self._SELECTORS['QRReloader']).click()
 
     def get_status(self):
         """

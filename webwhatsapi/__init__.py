@@ -88,7 +88,8 @@ class WhatsAPIDriver(object):
         'ReconnectLink': '.action',
         'WhatsappQrIcon': 'span.icon:nth-child(2)',
         'not_whatsappable': '._3lLzD',
-        'QRReloader': '._2EZ_m > span > div'
+        'QRReloader': '._2EZ_m > span > div',
+        'chat_window': '._2tW_W'
     }
 
     _CLASSES = {
@@ -291,6 +292,12 @@ class WhatsAPIDriver(object):
             EC.visibility_of_element_located((By.CSS_SELECTOR, self._SELECTORS['mainPage']))
         )
 
+    def wait_for_chat(self, timeout=60):
+        """waits for chat to appear"""
+        WebDriverWait(self.driver, timeout).until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, self._SELECTORS['chat_window']))
+            )
+
     def get_qr_plain(self):
         return self.driver.find_element_by_css_selector(self._SELECTORS['qrCodePlain']).get_attribute("data-ref")
 
@@ -353,7 +360,7 @@ class WhatsAPIDriver(object):
         """
         chats = self.wapi_functions.getAllChats()
         if chats:
-            return [factory_chat(chat, self) for chat in chats]
+            return [factory_chat(chat, self) for chat in chats if chat is not None and chat["kind"]]
         else:
             return []
 
@@ -522,17 +529,22 @@ class WhatsAPIDriver(object):
         """
 
         number = number.replace('+', '')
+        cid = number+"@c.us"
         for chat in self.get_all_chats():
-            if not isinstance(chat, UserChat) or number not in chat.id:
+            if not isinstance(chat, UserChat) or cid != chat.id:
                 continue
             return chat
         if createIfNotFound:
             self.create_chat(number)
-            self.wait_for_login()
-            for chat in self.get_all_chats():
-                if not isinstance(chat, UserChat) or number not in chat.id:
-                    continue
+            self.wait_for_login(120)
+            self.wait_for_chat(120)
+            try:
+                chat = self.get_chat_from_id(cid)
                 return chat
+            except ChatNotFoundError as e:
+                pass
+            except Exception as e:
+                print(f"Weird exception in WebWhatsAPI: {e}")
 
         raise ChatNotFoundError('Chat for phone {0} not found'.format(number))
 

@@ -22,7 +22,10 @@ class Contact(WhatsappObjectWithId):
         self.is_me = js_obj["isMe"]
         self.id = js_obj.get("id")
         if self.id:
-            self.phone_number = "+" + self.id.split('@')[0]
+            try:
+                self.phone_number = "+" + self.id.split('@')[0]
+            except Exception as e:
+                self.phone_number = self.id
         if 'shortName' in js_obj:
             self.short_name = js_obj["shortName"]
         if 'pushname' in js_obj:

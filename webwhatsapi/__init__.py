@@ -800,7 +800,7 @@ class WhatsAPIDriver(object):
     def quit(self):
         self.driver.quit()
 
-    def create_chat(self, phone_number):
+    def create_chat_by_number(self, phone_number):
         """
         Creates a Chat object, that can be retrieved on success
         This object will die if no messages are sent, so be careful :/

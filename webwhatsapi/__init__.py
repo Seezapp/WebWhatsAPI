@@ -529,22 +529,17 @@ class WhatsAPIDriver(object):
         """
 
         number = number.replace('+', '')
-        cid = number+"@c.us"
         for chat in self.get_all_chats():
-            if not isinstance(chat, UserChat) or cid != chat.id:
+            if not isinstance(chat, UserChat) or number not in chat.id:
                 continue
             return chat
         if createIfNotFound:
-            self.create_chat(number)
-            self.wait_for_login(120)
-            self.wait_for_chat(120)
-            try:
-                chat = self.get_chat_from_id(cid)
+            self.create_chat_by_number(number)
+            self.wait_for_login()
+            for chat in self.get_all_chats():
+                if not isinstance(chat, UserChat) or number not in chat.id:
+                    continue
                 return chat
-            except ChatNotFoundError as e:
-                pass
-            except Exception as e:
-                print(f"Weird exception in WebWhatsAPI: {e}")
 
         raise ChatNotFoundError('Chat for phone {0} not found'.format(number))
 

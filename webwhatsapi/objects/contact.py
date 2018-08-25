@@ -25,6 +25,8 @@ class Contact(WhatsappObjectWithId):
             self.formatted_name = js_obj["formattedName"]
         if 'profilePicThumbObj' in js_obj:
             self.profile_pic = js_obj["profilePicThumbObj"].get('eurl', None)
+        if 'isMe' in js_obj:
+            self.is_me = js_obj["isMe"]
 
     @driver_needed
     def get_common_groups(self):

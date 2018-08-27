@@ -16,9 +16,6 @@ class Contact(WhatsappObjectWithId):
         :type driver: WhatsAPIDriver
         """
         super(Contact, self).__init__(js_obj, driver)
-        self.short_name = js_obj["shortName"]
-        self.push_name = js_obj["pushname"]
-        self.formatted_name = js_obj["formattedName"]
         self.is_me = js_obj["isMe"]
         if self.id:
             self.phone_number = "+" + self.id.split('@')[0]

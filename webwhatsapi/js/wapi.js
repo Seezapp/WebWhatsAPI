@@ -18,7 +18,8 @@ if (!window.Store) {
                 { id: "WapDelete", conditions: (module) => (module.sendConversationDelete && module.sendConversationDelete.length == 2) ? module : null },
                 { id: "Conn", conditions: (module) => (module.default && module.default.ref && module.default.refTTL) ? module.default : null },
                 { id: "WapQuery", conditions: (module) => (module.queryExist) ? module : null },
-                { id: "ProtoConstructor", conditions: (module) => (module.prototype && module.prototype.constructor.toString().indexOf('binaryProtocol deprecated version') >= 0) ? module : null }
+                { id: "ProtoConstructor", conditions: (module) => (module.prototype && module.prototype.constructor.toString().indexOf('binaryProtocol deprecated version') >= 0) ? module : null },
+                { id: "UserConstructor", conditions: (module) => (module.default && module.default.prototype && module.default.prototype.isServer && module.default.prototype.isUser) ? module.default : null }
             ];
 
             for (let idx in modules) {
@@ -256,12 +257,12 @@ window.WAPI.getAllChatsWithNewMsg = function (done) {
  * @returns {Array|*} List of chat id's
  */
 window.WAPI.getAllChatIds = function (done) {
-    const chatIds = window.Store.Chat.map((chat) => chat.id);
+    const chatIds = window.Store.Chat.map((chat) => chat.id._serialized || chat.id);
 
     if (done !== undefined) {
         done(chatIds);
     } else {
-        return chats;
+        return chatIds;
     }
 };
 
@@ -289,6 +290,7 @@ window.WAPI.getAllGroups = function (done) {
  * @returns {T|*} Chat object
  */
 window.WAPI.getChat = function (id, done) {
+    id = typeof id == "string" ? id : id._serialized;
     const found = window.Store.Chat.get(id);
     if (done !== undefined) {
         done(found);
@@ -405,7 +407,8 @@ window.WAPI.getUnreadMessagesInChat = function (id, includeMe, includeNotificati
     let output = [];
 
     // look for unread messages, newest is at the end of array
-    for (let i = messages.length - 1; i >= 0; i--) {
+    for (let i = messages.length - 1; i >= 0; i--)
+    {
         // system message: skip it
         if (i === "remove") {
             continue;
@@ -421,8 +424,8 @@ window.WAPI.getUnreadMessagesInChat = function (id, includeMe, includeNotificati
             messageObj.isNewMsg = false;
             // process it
             let message = WAPI.processMessageObj(messageObj,
-                includeMe,
-                includeNotifications);
+                    includeMe,
+                    includeNotifications);
 
             // save processed message on result list
             if (message)
@@ -582,7 +585,7 @@ window.WAPI._getGroupParticipants = async function (id) {
  */
 window.WAPI.getGroupParticipantIDs = async function (id, done) {
     const output = (await WAPI._getGroupParticipants(id))
-        .map((participant) => participant.id);
+            .map((participant) => participant.id);
 
     if (done !== undefined) {
         done(output);
@@ -592,8 +595,8 @@ window.WAPI.getGroupParticipantIDs = async function (id, done) {
 
 window.WAPI.getGroupAdmins = async function (id, done) {
     const output = (await WAPI._getGroupParticipants(id))
-        .filter((participant) => participant.isAdmin)
-        .map((admin) => admin.id);
+            .filter((participant) => participant.isAdmin)
+            .map((admin) => admin.id);
 
     if (done !== undefined) {
         done(output);
@@ -615,6 +618,17 @@ window.WAPI.getMe = function (done) {
         return rawMe.all;
     }
     return rawMe.all;
+};
+
+window.WAPI.isLoggedIn = function (done) {
+    // Contact always exists when logged in
+    const isLogged = window.Store.Contact && window.Store.Contact.checksum !== undefined;
+
+    if (done !== undefined) {
+        done(isLogged);
+    }
+
+    return isLogged;
 };
 
 window.WAPI.processMessageObj = function (messageObj, includeMe, includeNotifications) {
@@ -658,8 +672,8 @@ window.WAPI.getAllMessageIdsInChat = function (id, includeMe, includeNotificatio
     const messages = chat.msgs.models;
     for (const i in messages) {
         if ((i === "remove")
-            || (!includeMe && messages[i].isMe)
-            || (!includeNotifications && messages[i].isNotification)) {
+                || (!includeMe && messages[i].isMe)
+                || (!includeNotifications && messages[i].isNotification)) {
             continue;
         }
         output.push(messages[i].id._serialized);
@@ -735,7 +749,6 @@ window.WAPI.ReplyMessage = function (idMessage, message, done) {
                         }
                         sleep(500).then(check);
                     }
-
                     check();
                 });
                 return true;
@@ -751,9 +764,10 @@ window.WAPI.sendMessageToID = function (id, message, done) {
     if (window.Store.Chat.length == 0)
         return false;
 
+
     firstChat = Store.Chat.models[0];
     var originalID = firstChat.id;
-    firstChat.id = id;
+    firstChat.id = typeof originalID == "string" ? id : new window.Store.UserConstructor(id);
     if (done !== undefined) {
         firstChat.sendMessage(message).then(function () {
             firstChat.id = originalID;
@@ -785,7 +799,7 @@ window.WAPI.sendMessage = function (id, message, done) {
         let temp = {};
         temp.name = Chats[chat].formattedTitle;
         temp.id = Chats[chat].id;
-        if (temp.id === id) {
+        if (temp.id._serialized === id) {
             if (done !== undefined) {
                 Chats[chat].sendMessage(message).then(function () {
                     function sleep(ms) {
@@ -812,7 +826,6 @@ window.WAPI.sendMessage = function (id, message, done) {
                         }
                         sleep(500).then(check);
                     }
-
                     check();
                 });
                 return true;
@@ -835,7 +848,7 @@ window.WAPI.sendMessage2 = function (id, message, done) {
         let temp = {};
         temp.name = Chats[chat].formattedTitle;
         temp.id = Chats[chat].id;
-        if (temp.id === id) {
+        if (temp.id._serialized === id) {
             try {
                 if (done !== undefined) {
                     Chats[chat].sendMessage(message).then(function () {
@@ -865,7 +878,7 @@ window.WAPI.sendSeen = function (id, done) {
         let temp = {};
         temp.name = Chats[chat].formattedTitle;
         temp.id = Chats[chat].id;
-        if (temp.id === id) {
+        if (temp.id._serialized === id) {
             if (done !== undefined) {
                 Chats[chat].sendSeen(false).then(function () {
                     done(true);
@@ -1083,23 +1096,6 @@ window.WAPI.getBatteryLevel = function (done) {
     return output;
 };
 
-window.WAPI.getAllMessagesAfter = function (unix_timestamp, done) {
-    let messageObjs = window.Store.Msg.models.filter((msg) => msg.__x_t > unix_timestamp);
-    var output = [];
-    for (const i in messageObjs) {
-        if (i === "remove") {
-            continue;
-        }
-        const messageObj = messageObjs[i];
-        let message = WAPI.processMessageObj(messageObj, true, false);
-        if (message) output.push(message);
-    }
-    if (done !== undefined) {
-        done(output);
-    }
-
-    return output
-};
 window.WAPI.deleteConversation = function (chatId, done) {
     let conversation = window.Store.Chat.get(chatId);
     let lastReceivedKey = conversation.lastReceivedKey;
@@ -1288,6 +1284,24 @@ window.WAPI.getNewMessageId = function(chatId) {
     newMsgId._serialized = `${newMsgId.fromMe}_${newMsgId.remote}_${newMsgId.id}`
 
     return newMsgId;
+};
+
+window.WAPI.getAllMessagesAfter = function (unix_timestamp, done) {
+    let messageObjs = window.Store.Msg.models.filter((msg) => msg.__x_t > unix_timestamp);
+    var output = [];
+    for (const i in messageObjs) {
+        if (i === "remove") {
+            continue;
+        }
+        const messageObj = messageObjs[i];
+        let message = WAPI.processMessageObj(messageObj, true, false);
+        if (message) output.push(message);
+    }
+    if (done !== undefined) {
+        done(output);
+    }
+
+    return output
 };
 
 /**

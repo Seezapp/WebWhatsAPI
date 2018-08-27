@@ -71,7 +71,7 @@ class WhatsappObjectWithId(WhatsappObject):
         :type driver: WhatsAPIDriver
         """
         super(WhatsappObjectWithId, self).__init__(js_obj, driver)
-        if 'id' in js_obj:
+        if 'id' in js_obj and js_obj['id']:
             if type(js_obj["id"]) is str:
                 self.id = js_obj["id"]
             else:

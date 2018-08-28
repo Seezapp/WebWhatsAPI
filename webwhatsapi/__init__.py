@@ -92,6 +92,7 @@ class WhatsAPIDriver(object):
         'chat_window': '._2tW_W'
     }
 
+
     _CLASSES = {
         'unreadBadge': 'icon-meta',
         'messageContent': "message-text",
@@ -286,7 +287,7 @@ class WhatsAPIDriver(object):
         # instead we use this (temporary) solution:
         return 'class="app _3dqpi two"' in self.driver.page_source
 
-    def wait_for_login(self, timeout=90):
+    def wait_for_login(self, timeout=120):
         """Waits for the QR to go away"""
         WebDriverWait(self.driver, timeout).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, self._SELECTORS['mainPage']))
@@ -536,15 +537,10 @@ class WhatsAPIDriver(object):
             return chat
         if createIfNotFound:
             self.create_chat(number)
-            self.wait_for_login(120)
-            self.wait_for_chat(120)
-            try:
-                chat = self.get_chat_from_id(cid)
-                return chat
-            except ChatNotFoundError as e:
-                pass
-            except Exception as e:
-                print(f"Weird exception in WebWhatsAPI: {e}")
+            self.wait_for_login()
+            self.wait_for_chat()
+            chat = self.get_chat_from_id(number+"@c.us")
+            return chat
 
         raise ChatNotFoundError('Chat for phone {0} not found'.format(number))
 

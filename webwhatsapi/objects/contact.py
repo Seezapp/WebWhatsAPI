@@ -16,16 +16,10 @@ class Contact(WhatsappObjectWithId):
         :type driver: WhatsAPIDriver
         """
         super(Contact, self).__init__(js_obj, driver)
-        self.short_name = js_obj["shortName"]
-        self.push_name = js_obj["pushname"]
-        self.formatted_name = js_obj["formattedName"]
-        self.is_me = js_obj["isMe"]
-        self.id = js_obj.get("id")
-        if self.id:
-            try:
-                self.phone_number = "+" + self.id.split('@')[0]
-            except Exception as e:
-                self.phone_number = self.id
+        if 'isMe' in js_obj:
+            self.is_me = js_obj["isMe"]
+        if 'id' in js_obj and js_obj['id'] != None:
+            self.phone_number = "+" + self.id.split('@')[0]
         if 'shortName' in js_obj:
             self.short_name = js_obj["shortName"]
         if 'pushname' in js_obj:

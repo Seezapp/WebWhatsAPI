@@ -597,7 +597,8 @@ function wait(ms) {
 
 window.WAPI.isLoggedIn = function (done) {
     // Contact always exists when logged in
-    const isLogged = window.Store.Conn.connected;
+
+    const isLogged = window.Store.Conn && window.Store.Conn.connected;
 
     if (done !== undefined) done(isLogged);
     return isLogged;

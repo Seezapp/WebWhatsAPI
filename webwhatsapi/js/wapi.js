@@ -590,24 +590,19 @@ window.WAPI.getMe = function (done) {
     return rawMe.all;
 };
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+function wait(ms) {
+    var start = +(new Date());
+    while (new Date() - start < ms);
 }
 
-window.WAPI.isLoggedIn = function (timeout, done) {
+window.WAPI.isLoggedIn = function (done) {
     // Contact always exists when logged in
-
-    let isLogged = false;
-    for (let i = 0; i < timeout; i++) {
-         isLogged = window.Store.Contact && window.Store.Contact.checksum !== undefined;
-        if (isLogged)
-            break;
-        sleep(1000)
-    }
+    const isLogged = window.Store.Conn.connected;
 
     if (done !== undefined) done(isLogged);
     return isLogged;
 };
+
 
 window.WAPI.processMessageObj = function (messageObj, includeMe, includeNotifications) {
     if (messageObj.isNotification) {
@@ -790,7 +785,7 @@ window.WAPI.sendMessage = function (id, message, done) {
                         return;
                     }
                     sleep(500).then(check);
-                }
+            }
 
                 check();
             });

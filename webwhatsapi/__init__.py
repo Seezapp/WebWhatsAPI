@@ -8,6 +8,8 @@ import binascii
 import logging
 import os
 import tempfile
+from time import sleep
+
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from axolotl.kdf.hkdfv3 import HKDFv3
@@ -288,18 +290,22 @@ class WhatsAPIDriver(object):
 
             self.driver.refresh()
 
-    def is_logged_in(self, timeout=30):
+    def is_logged_in(self):
         """Returns if user is logged. Can be used if non-block needed for wait_for_login"""
 
         # instead we use this (temporary) solution:
         # return 'class="app _3dqpi two"' in self.driver.page_source
-        return self.wapi_functions.isLoggedIn(timeout)
+        return self.wapi_functions.isLoggedIn()
 
-    def wait_for_login(self, timeout=120):
-        """Waits for the QR to go away"""
-        WebDriverWait(self.driver, timeout).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, self._SELECTORS['mainPage']))
-        )
+    def wait_for_login(self, timeout=30):
+        logged_in = False
+        for i in range(timeout):
+            logged_in = self.is_logged_in()
+            if logged_in:
+                break
+            sleep(1)
+        return logged_in
+
 
     def wait_for_chat(self, timeout=60):
         """waits for chat to appear"""

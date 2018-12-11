@@ -24,6 +24,10 @@ class Chat(WhatsappObjectWithId):
         super(Chat, self).__init__(js_obj, driver)
 
     @driver_needed
+    def send_media(self, image_path, caption=None):
+        return self.driver.send_media(image_path, self.id, caption)
+
+    @driver_needed
     def send_message(self, message):
         return self.driver.chat_send_message(self.id, message)
 
@@ -32,8 +36,7 @@ class Chat(WhatsappObjectWithId):
         return self.driver.chat_send_seen(self.id)
 
     def get_messages(self, include_me=False, include_notifications=False):
-
-        return list(self.driver.chat_get_messages(self.id, include_me, include_notifications))
+        return list(self.driver.get_all_messages_in_chat(self, include_me, include_notifications))
 
 
     def get_unread_messages(self,

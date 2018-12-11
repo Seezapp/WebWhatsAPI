@@ -594,15 +594,15 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-window.WAPI.isLoggedIn = function (done) {
+window.WAPI.isLoggedIn = function (timeout, done) {
     // Contact always exists when logged in
 
     let isLogged = false;
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < timeout; i++) {
          isLogged = window.Store.Contact && window.Store.Contact.checksum !== undefined;
         if (isLogged)
             break;
-        sleep(500)
+        sleep(1000)
     }
 
     if (done !== undefined) done(isLogged);

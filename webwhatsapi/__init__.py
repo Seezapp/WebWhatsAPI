@@ -288,12 +288,12 @@ class WhatsAPIDriver(object):
 
             self.driver.refresh()
 
-    def is_logged_in(self):
+    def is_logged_in(self, timeout=30):
         """Returns if user is logged. Can be used if non-block needed for wait_for_login"""
 
         # instead we use this (temporary) solution:
         # return 'class="app _3dqpi two"' in self.driver.page_source
-        return self.wapi_functions.isLoggedIn()
+        return self.wapi_functions.isLoggedIn(timeout)
 
     def wait_for_login(self, timeout=120):
         """Waits for the QR to go away"""

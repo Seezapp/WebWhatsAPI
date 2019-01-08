@@ -675,7 +675,7 @@ class WhatsAPIDriver(object):
             msg_obj = factory_message(message, self)
             if not text_only:
                 messages.append(msg_obj)
-            elif hasattr(msg_obj, 'content'):
+            elif hasattr(msg_obj, 'content') and type(msg_obj) == Message:  # Dont want mediamessage here
                 messages.append(msg_obj)
         return messages
 

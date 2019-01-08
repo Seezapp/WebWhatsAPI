@@ -308,10 +308,10 @@ class WhatsAPIDriver(object):
                 pass
         return logged_in
 
-    def wait_for_chat(self, timeout=60):
+    def wait_for_chat(self, timeout=30):
         """waits for chat to appear"""
         WebDriverWait(self.driver, timeout).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, self._SELECTORS['chat_window']))
+            EC.visibility_of_element_located((By.XPATH, "//div[@role = 'button' and @title='Menu']"))
         )
 
     def get_qr_plain(self):

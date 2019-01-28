@@ -26,10 +26,10 @@ if (!window.Store) {
                     id: "Conn",
                     conditions: (module) => (module.default && module.default.ref && module.default.refTTL) ? module.default : null
                 },
-                {id: "WapQuery", conditions: (module) => (module.queryExist) ? module : null},
+                { id: "WapQuery", conditions: (module) => (module.queryExist) ? module : ((module.default && module.default.queryExist) ? module.default : null) },
                 {
                     id: "ProtoConstructor",
-                    conditions: (module) => (module.prototype && module.prototype.constructor.toString().indexOf('binaryProtocol deprecated version') >= 0) ? module : null
+                    conditions: (module) => (module.prototype && module.prototype.constructor.toString().indexOf('binaryProtocol deprecated version') >= 0) ? module : ((module.default && module.default.prototype && module.default.prototype.constructor.toString().indexOf('binaryProtocol deprecated version') >= 0) ? module.default : null)
                 },
                 {
                     id: "UserConstructor",
@@ -592,7 +592,7 @@ window.WAPI.getMe = function (done) {
 
 function wait(ms) {
     var start = +(new Date());
-    while (new Date() - start < ms);
+    while (new Date() - start < ms) ;
 }
 
 window.WAPI.isLoggedIn = function (done) {
@@ -786,7 +786,7 @@ window.WAPI.sendMessage = function (id, message, done) {
                         return;
                     }
                     sleep(500).then(check);
-            }
+                }
 
                 check();
             });

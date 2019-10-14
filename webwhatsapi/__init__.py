@@ -74,7 +74,7 @@ class WhatsAPIDriver(object):
     _SELECTORS = {
         'firstrun': "#wrapper",
         'qrCode': "img[alt=\"Scan me!\"]",
-        'qrCodePlain': "._2EZ_m",
+        'qrCodePlain': "div[data-ref]",
         'mainPage': ".app.two",
         'chatList': ".infinite-list-viewport",
         'messageList': "#main > div > div:nth-child(1) > div > div.message-list",
@@ -90,8 +90,8 @@ class WhatsAPIDriver(object):
         'ReconnectLink': '.action',
         'WhatsappQrIcon': 'span.icon:nth-child(2)',
         'not_whatsappable': '._3lLzD',
-        'QRReloader': '._2EZ_m > span > div',
-        'chat_window': '._2tW_W'
+        'chat_window': '._2tW_W',
+        'QRReloader': 'div[data-ref] > span > div'
     }
 
     _CLASSES = {
@@ -111,7 +111,7 @@ class WhatsAPIDriver(object):
         return self.driver.execute_script('return window.localStorage;')
 
     def set_local_storage(self, data):
-        self.driver.execute_script(''.join(["window.localStorage.setItem('{}', '{}');".format(k, v)
+        self.driver.execute_script(''.join(["window.localStorage.setItem('{}', '{}');".format(k, v.replace("\n","\\n") if isinstance(v, str) else v)
                                             for k, v in data.items()]))
 
     def save_firefox_profile(self, remove_old=False):
@@ -171,7 +171,9 @@ class WhatsAPIDriver(object):
                 self.logger.debug("chat not found", c)
 
     def __init__(self, client="firefox", username="API", proxy=None, command_executor=None, loadstyles=False,
-                 profile=None, headless=False, autoconnect=True, logger=None, extra_params=None, chrome_options=None):
+                 profile=None, headless=False, autoconnect=True, logger=None, extra_params=None, chrome_options=None,
+                 executable_path=None):
+        """Initialises the webdriver"""
 
         self.logger = logger or self.logger
         extra_params = extra_params or {}
@@ -212,8 +214,16 @@ class WhatsAPIDriver(object):
             capabilities['webStorageEnabled'] = True
 
             self.logger.info("Starting webdriver")
-            self.driver = webdriver.Firefox(capabilities=capabilities, options=options,
-                                            **extra_params)
+            if executable_path is not None:
+                executable_path = os.path.abspath(executable_path)                                
+
+                self.logger.info("Starting webdriver")
+                self.driver = webdriver.Firefox(capabilities=capabilities, options=options, executable_path=executable_path,
+                                                    **extra_params)
+            else: 
+                self.logger.info("Starting webdriver")
+                self.driver = webdriver.Firefox(capabilities=capabilities, options=options,
+                                                    **extra_params)
 
         elif self.client == "chrome":
             self._profile = webdriver.ChromeOptions()
@@ -294,7 +304,11 @@ class WhatsAPIDriver(object):
 
         # instead we use this (temporary) solution:
         # return 'class="app _3dqpi two"' in self.driver.page_source
-        return self.wapi_functions.isLoggedIn()
+        return self.driver.execute_script("if (document.querySelector('*[data-icon=chat]') !== null) { return true } else { return false }")
+
+    def is_connected(self):
+        """Returns if user's phone is connected to the internet."""
+        return self.wapi_functions.isConnected()
 
     def wait_for_login(self, timeout=30):
         logged_in = False
@@ -406,7 +420,7 @@ class WhatsAPIDriver(object):
         unread_messages = []
         for raw_message_group in raw_message_groups:
             chat = factory_chat(raw_message_group, self)
-            messages = [factory_message(message, self) for message in raw_message_group['messages']]
+            messages = list(filter(None.__ne__,[factory_message(message, self) for message in raw_message_group['messages']]))
             messages.sort(key=lambda message: message.timestamp)
             unread_messages.append(MessageGroup(chat, messages))
 
@@ -802,6 +816,17 @@ class WhatsAPIDriver(object):
         :return:
         """
         return self.wapi_functions.deleteConversation(chat_id)
+    
+    def delete_message(self, chat_id, message_array, revoke=False):
+        """
+        Delete a chat
+
+        :param chat_id: id of chat
+        :param message_array: one or more message(s) id
+        :param revoke: Set to true so the message will be deleted for everyone, not only you
+        :return:
+        """
+        return self.wapi_functions.deleteMessage(chat_id, message_array, revoke=False)
 
     def check_number_status(self, number_id):
         """
@@ -820,6 +845,7 @@ class WhatsAPIDriver(object):
         self.wapi_functions.new_messages_observable.unsubscribe(observer)
 
     def quit(self):
+        self.wapi_functions.quit()
         self.driver.quit()
 
     def create_chat(self, phone_number):

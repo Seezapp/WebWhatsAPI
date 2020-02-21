@@ -813,3 +813,32 @@ class WhatsAPIDriver(object):
 
     def demote_participant_admin_group(self, idGroup, idParticipant):
         return self.wapi_functions.demoteParticipantAdminGroup(idGroup, idParticipant)
+
+
+    ## code from Mikkel-era
+
+    def get_all_messages_after(self, unix_timestamp: int, text_only: bool = True):
+        """
+        Load all messages that occurred after unix_timestamp
+        :param unix_timestamp:
+        :param text_only: Whether or not to only consider text message (i.e. ignore media files)
+        :return: List[Message]
+        """
+        from .objects.message import Message
+
+        raw_messages = self.wapi_functions.getAllMessagesAfter(unix_timestamp)
+
+        messages = []
+        for message in raw_messages:
+            msg_obj = factory_message(message, self)
+            if not text_only:
+                messages.append(msg_obj)
+            elif hasattr(msg_obj, 'content') and type(msg_obj) == Message:
+                messages.append(msg_obj)
+        return messages
+
+    def wait_for_chat(self, timeout: int = 30):
+        """ Waits for chat to appear """
+        WebDriverWait(self.driver, timeout).until(
+            EC.visibility_of_element_located((By.XPATH, "//div[@role='button' and @title='Menu']"))
+        )

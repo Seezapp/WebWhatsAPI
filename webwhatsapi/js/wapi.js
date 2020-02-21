@@ -1403,3 +1403,23 @@ window.WAPI.demoteParticipantAdminGroup = function (idGroup, idParticipant, done
         done(true); return true;
     })
 }
+
+
+/* code from Mikkel-era */
+
+window.WAPI.getAllMessagesAfter = function (unix_timestamp, done) {
+    let messageObjs = window.Store.Msg.models.filter((msg) => msg.__x_t > unix_timestamp);
+    var output = [];
+    for (const i in messageObjs) {
+        if (i === "remove") {
+            continue;
+        }
+        const messageObj = messageObjs[i];
+        let message = WAPI.processMessageObj(messageObj, true, false);
+        if (message) output.push(message);
+    }
+    if (done !== undefined) {
+        done(output);
+    }
+    return output
+};

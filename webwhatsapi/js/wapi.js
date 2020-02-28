@@ -1405,18 +1405,20 @@ window.WAPI.demoteParticipantAdminGroup = function (idGroup, idParticipant, done
 }
 
 
-/* code from Mikkel-era */
+/* code from Mikkel-era
+ * NOTE: Updated/fixed after merge with upstream etc.
+ */
 
-window.WAPI.getAllMessagesAfter = function (unix_timestamp, done) {
-    let messageObjs = window.Store.Msg.models.filter((msg) => msg.__x_t > unix_timestamp);
+window.WAPI.getAllMessagesAfter = function(unixTimestamp, includeMe, includeNotifications, done) {
+    let messageObjs = window.Store.Msg.models.filter((msg) => msg.__x_t > unixTimestamp);
     var output = [];
     for (const i in messageObjs) {
-        if (i === "remove") {
+        if (i === "remove")
             continue;
-        }
         const messageObj = messageObjs[i];
-        let message = WAPI.processMessageObj(messageObj, true, false);
-        if (message) output.push(message);
+        let message = WAPI.processMessageObj(messageObj, includeMe, includeNotifications);
+        if (message)
+            output.push(message);
     }
     if (done !== undefined) {
         done(output);

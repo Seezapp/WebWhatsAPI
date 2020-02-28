@@ -816,17 +816,26 @@ class WhatsAPIDriver(object):
 
 
     ## code from Mikkel-era
+    ## NOTE: Updated/fixed after merge with upstream.
 
-    def get_all_messages_after(self, unix_timestamp: int, text_only: bool = True):
+    def get_all_messages_after(self,
+                               unix_timestamp: int,
+                               text_only: bool=True,
+                               include_me: bool=False,
+                               include_notifications: bool=False):
         """
         Load all messages that occurred after unix_timestamp
         :param unix_timestamp:
         :param text_only: Whether or not to only consider text message (i.e. ignore media files)
+        :param include_me: Whether or not to include messages sent from sender
+        :param include_notifications:
         :return: List[Message]
         """
         from .objects.message import Message
 
-        raw_messages = self.wapi_functions.getAllMessagesAfter(unix_timestamp)
+        raw_messages = self.wapi_functions.getAllMessagesAfter(unix_timestamp,
+                                                               include_me,
+                                                               include_notifications)
 
         messages = []
         for message in raw_messages:
@@ -837,8 +846,11 @@ class WhatsAPIDriver(object):
                 messages.append(msg_obj)
         return messages
 
-    def wait_for_chat(self, timeout: int = 30):
-        """ Waits for chat to appear """
+
+    def wait_for_chat(self, timeout: int=30):
+        """ Waits for chat to appear
+        NOTE: I think this element is also visible once no chat is chosen..
+        """
         WebDriverWait(self.driver, timeout).until(
             EC.visibility_of_element_located((By.XPATH, "//div[@role='button' and @title='Menu']"))
         )
